@@ -1,0 +1,55 @@
+# 第二次实践
+
+## 第一题
+
+```{r}
+print(choose(5, 1) * choose(12, 1) * choose(3, 1))
+```
+
+## 第二/三题
+
+```{r}
+n <- 10000
+t <- 0
+for (i in 1:n) {
+    t <- t + sample(c(0, 1), 1)
+}
+print(t / n)
+```
+
+## 第四题
+
+```{r}
+same_birth_prob <- function(people) {
+    times <- 1000
+    same <- 0
+    for (i in 1:times) {
+        birth <- sample(c(1:365), people, replace = TRUE)
+        if (length(birth) != length(unique(birth))) {
+            same <- same + 1
+        }
+    }
+    return(same / times)
+}
+print(same_birth_prob(22))
+print(same_birth_prob(30))
+print(same_birth_prob(50))
+print(same_birth_prob(80))
+```
+
+## 第五题
+
+```{r}
+people <- 10
+times <- 10000
+win_times <- c(rep(0, people))
+for (i in 1:times) {
+    win_person <- which(sample(c(1:10), 10) == 10, arr.ind = TRUE)
+    win_times[win_person] <- win_times[win_person] + 1
+}
+win_prob <- win_times / times
+print(win_prob)
+barplot( height = win_prob, names.arg = c(1:10),
+    xlab = "人", ylab = "获胜概率", ylim = c(0, 0.15))
+```
+
