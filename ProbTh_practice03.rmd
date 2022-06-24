@@ -1,0 +1,201 @@
+---
+title: 第三次实践-概率作图
+---
+
+# 课堂
+
+## 验证性实验
+
+> ` dbinom(x, size, prob)` x 可以是值或范围，返回 X~B(size,prob) 时 P(X=x) 的值
+
+### 第一题
+
+```{r}
+data <- dbinom(0:200, 400, 0.2)
+# 向量下标从1开始，次数从0开始
+which(data == max(data)) - 1
+plot(data)
+```
+
+### 第二题
+
+```{r}
+n <- 1
+repeat{
+    n <- n + 1
+    if (1 - dbinom(0, n, 0.23) >= 0.95) break
+}
+n
+```
+
+### 第三题
+
+```{r}
+n <- 1
+p <- pnorm(10, 7.5, 10) - pnorm(-10, 7.5, 10)
+while (1 - dbinom(0, n, p) <= 0.9) {
+    n <- n + 1
+}
+n
+```
+
+## 设计性实验
+
+> ` rbinom(n, size, prob)` 产生 n 个服从 B(size,prob) 的随机数
+
+> ` matrix(data, nrow, ncol, byrow = FALSE)`
+
+> ` runif(n, a, b)` 产生 n 个服从 U(a,b) 的随机数
+
+> ` rexp(n, rate)` 产生 n 个服从 Exp(rate) 的随机数
+
+> ` rnorm(n, mean, sd)` 产生 n 个服从 N(mean, sd) 的随机数
+
+### 第一题
+
+```{r}
+rbinom(1, 20, 0.25)
+rbinom(10, 20, 0.25)
+matrix(rbinom(21, 20, 0.25), 3, 7)
+matrix(runif(81, 1, 3), 9, 9)
+rexp(9, 1 / 3)
+rnorm(7, 4, 2)
+```
+
+### 第二题
+
+```{r}
+x <- 0:10
+y1 <- dbinom(x, 10, 0.3)
+plot(x, y1, main = "分布律", pch = 21, xlab = "value", ylab = "prob")
+x <- seq(-1, 10.5, 0.1)
+y2 <- pbinom(x, 10, 0.3)
+plot(x, y2, main = "分布函数", type = "l", xlab = "value", ylab = "prob")
+```
+
+```{r}
+x <- seq(-2, 14, 0.1)
+y1 <- dnorm(x, 6, 2)
+plot(x, y1, main = "概率密度", type = "l", xlab = "value", ylab = "prob")
+y2 <- pnorm(x, 6, 2)
+plot(x, y2, main = "分布函数", type = "l", xlab = "value", ylab = "prob")
+```
+
+```{r}
+x <- 0:25
+bx <- dbinom(x, 25, 0.15)
+px <- dpois(x, 3.75)
+data <- rbind(bx, px)
+barplot(data, col = c("blue", "red"), beside = TRUE, xlab = "value", ylab = "prob")
+legend("topright", pch = 15, c("二项概率", "泊松概率"), col = c("blue", "red"))
+```
+
+```{r}
+qbinom(0.95, 200, 0.1) / 3
+```
+
+# 作业
+
+## 第一题
+
+```{r}
+x <- 0:40
+bx <- dbinom(x, 40, 0.2)
+px <- dpois(x, 8)
+plot(bx, type = "o", ylim = c(0, 0.2), col = "blue", xlab = "取值", ylab = "概率")
+par(new = TRUE)
+plot(px, type = "o", ylim = c(0, 0.2), col = "red", axes = FALSE, xlab = "", ylab = "")
+legend("topright", pch = 15, c("二项概率", "泊松概率"), col = c("blue", "red"))
+```
+
+## 第二题
+
+```{r}
+n <- 0:10000
+X <- runif(n, 0, 1)
+Y <- runif(n, 0, 1)
+Z <- X + Y
+hist(Z, breaks = 10, freq = F, main = "频率分布直方图", xlab = "Z的取值范围", ylab = "频率", xlim = c(0, 2))
+
+x <- seq(0, 2, 0.1)
+arr1 <- array(NA, dim = c(1, 21))
+fun <- function(a, b) {
+    if (a >= 0 && a <= 1) {
+        b <- a
+    } else {
+        (
+            if (a > 1 && a <= 2) {
+                b <- 2 - a
+            } else {
+                b <- 0
+            }
+        )
+    }
+}
+for (i in seq(0, 2, 0.1)) {
+    a <- i
+    b <- NA
+    arr1[i * 10] <- fun(a, b)
+}
+a <- runif(10000, min = 0, max = 1) # 生成随机数
+b <- runif(10000, min = 0, max = 1)
+c <- a + b
+hist(c, ylim = c(0, 1), col = "pink", , freq = F) # 纵坐标density代表概率密度
+lines(x, arr1, col = "blue", lwd = 2)
+```
+
+## 第三题
+
+```{r}
+d <- c()
+n <- 5000
+p <- 0.15
+m <- 20
+for (i in 1:n) {
+    a <- rbinom(m, 1, p)
+    b <- sum(a)
+    d <- c(d, (b - m / 2))
+}
+hist(d, main = "n = 5000, p = 0.15")
+d <- c()
+p <- 0.5
+for (i in 1:n) {
+    a <- rbinom(m, 1, p)
+    b <- sum(a)
+    d <- c(d, (b - m / 2))
+}
+hist(d, main = "n = 5000, p = 0.5")
+d <- c()
+p <- 0.85
+for (i in 1:n) {
+    a <- rbinom(m, 1, p)
+    b <- sum(a)
+    d <- c(d, (b - m / 2))
+}
+hist(d, main = "n = 5000, p = 0.85")
+p <- 0.3
+d <- c()
+n <- 1000
+for (i in 1:n) {
+    a <- rbinom(m, 1, p)
+    b <- sum(a)
+    d <- c(d, (b - m / 2))
+}
+hist(d, main = "n = 1000, p = 0.3")
+d <- c()
+n <- 10000
+for (i in 1:n) {
+    a <- rbinom(m, 1, p)
+    b <- sum(a)
+    d <- c(d, (b - m / 2))
+}
+hist(d, main = "n = 10000, p = 0.3")
+d <- c()
+n <- 100000
+for (i in 1:n) {
+    a <- rbinom(m, 1, p)
+    b <- sum(a)
+    d <- c(d, (b - m / 2))
+}
+hist(d, main = "n = 100000, p = 0.3")
+```
