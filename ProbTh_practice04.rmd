@@ -1,0 +1,190 @@
+---
+title: 第四次实践-概率分布的应用
+---
+
+> 逻辑运算符 `& | !` 将第一向量的每个元素与第二向量的相应元素进行比较，比较的结果是布尔值
+
+> 逻辑运算符 `&& ||` 只考虑向量的第一个元素，给出单个元素的向量作为输出
+
+> `density()` 与 `plot()` 配合使用，绘制数据密度图
+
+# 课堂
+
+## 验证性实验
+
+### 第一题
+
+```{r}
+
+p <- function(x, y) {
+    sim <- 10000
+    t <- numeric(sim)
+    for (i in 1:sim) {
+        a <- sample(1:4, 1)
+        b <- sample(1:a, 1)
+        t[i] <- (a == x) & (b == y)
+    }
+    mean(t)
+}
+PF <- matrix(0, 4, 4)
+for (i in 1:4) {
+    for (j in 1:4) {
+        PF[i, j] <- p(i, j)
+    }
+}
+PF
+apply(PF, 1, sum)
+apply(PF, 2, sum)
+```
+
+### 第二题
+
+```{r}
+sumunif <- function(n) {
+    x <- seq(0, 3, 0.01)
+    truth <- x
+    truth[x > 1 & x <= 2] <- 2 - x[x > 1 & x <= 2]
+    truth[x <= 0 | x > 2] <- 0
+    plot(density(runif(n) + runif(n)),
+        main = "Desity Estimate of the sum of two Uniform distribution",
+        ylim = c(0, 1.2), lwd = 2, , lty = 2
+    )
+    lines(x, truth, col = "red", lwd = 2)
+    legend("topright", c("True Density", "Estimated Density"),
+        col = c("red", "black"), lwd = 2, lty = c(1, 2)
+    )
+}
+sumunif(1000)
+```
+
+## 设计性实验
+
+### 巴拿赫火柴盒问题
+
+```{r}
+x <- function(n, r) {
+    rpt <- 1000
+    p <- 0.5
+
+    m <- 0
+    for (j in 1:rpt) {
+        n1 <- n
+        nr <- n
+        for (i in 1:(2 * n)) {
+            x <- rbinom(1, 1, p)
+            if (x == 0) {
+                n1 <- n1 - 1
+            } else {
+                nr <- nr - 1
+            }
+            if (n1 == 0 | nr == 0) break
+        }
+        if ((n1 == 0 & nr == r) | (n1 == r & nr == 0)) m <- m + 1
+    }
+    cat("p(", n, ",", r, ")=", m / rpt, "\n")
+}
+x(100, 4)
+```
+
+### 公交车门高度设计
+
+```{r}
+qnorm(0.99, 170, 6)
+```
+
+### 考试录取问题
+
+```{r}
+prob <- 31 / 1821
+sigma <- (360 - 166) / qnorm(1 - prob, 0, 1)
+rate <- 1 - pnorm((256 - 166) / sigma, 0, 1)
+rate * 1821
+```
+
+## 作业
+
+### 第一题
+
+```{r collapse=FALSE}
+orgin <- matrix(data = c(
+    1 / 4, 1 / 8, 1 / 12, 1 / 16,
+    0,     1 / 8, 1 / 12, 1 / 16,
+    0,     0,     1 / 12, 1 / 16,
+    0,     0,     0,      1 / 16
+), nrow = 4, ncol = 4)
+# -----------------------------------
+sumxy <- numeric(8)
+for (i in 1:4) {
+    for (j in 1:4) {
+        sumxy[i + j] <- sumxy[i + j] + orgin[i, j]
+    }
+}
+data.frame(Prob = sumxy)
+multixy <- numeric(16)
+for (i in 1:4) {
+    for (j in 1:4) {
+        multixy[i * j] <- multixy[i * j] + orgin[i, j]
+    }
+}
+data.frame(Prob = multixy)
+maxxy <- numeric(4)
+for (i in 1:4) {
+    for (j in 1:4) {
+        maxxy[max(i, j)] <- maxxy[max(i, j)] + orgin[i, j]
+    }
+}
+data.frame(Prob = maxxy)
+```
+
+### 第二题
+
+```{r}
+n <- 1000
+plot(density(rnorm(n) + rnorm(n)),
+    main = "Desity Estimate of the sum of two Normal distribution",
+    xlim = c(-6, 6), ylim = c(0, 0.4), lwd = 2, , lty = 1, col = "red"
+)
+x <- seq(-6, 6, 0.1)
+y1 <- dnorm(x, 0, sqrt(2))
+lines(x, y1, col = "black", lwd = 2, lty = 2)
+legend("topright", c("True Density", "Estimated Density"),
+    col = c("black", "red"), lwd = 2, lty = c(2, 1)
+)
+```
+
+### 第三题
+
+```{r}
+sumunif <- function(n) {
+    x <- seq(0, 3, 0.01)
+    truth <- x
+    truth[x > 1 & x <= 2] <- 2 - x[x > 1 & x <= 2]
+    truth[x <= 0 | x > 2] <- 0
+    plot(density(runif(n) + runif(n)),
+        main = "Desity Estimate of the sum of two Uniform distribution",
+        ylim = c(0, 1.2), lwd = 2, , lty = 2
+    )
+    lines(x, truth, col = "red", lwd = 2)
+    legend("topright", c("True Density", "Estimated Density"),
+        col = c("red", "black"), lwd = 2, lty = c(1, 2)
+    )
+}
+sumunif(1000)
+```
+
+### 第四题
+
+```{r}
+n <- 1000
+x <- matrix(0, 3, 3)
+for (i in 1:n) {
+    box <- c(0, 0, 0)
+    a <- sample(c(1, 2, 3), 1)
+    box[a] <- box[a] + 1
+    b <- sample(c(1, 2, 3), 1)
+    box[b] <- box[b] + 1
+    x[box[1] + 1, box[2] + 1] <- x[box[1] + 1, box[2] + 1] + 1
+}
+x <- x / n
+x
+```
