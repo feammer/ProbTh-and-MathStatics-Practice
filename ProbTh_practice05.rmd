@@ -1,0 +1,253 @@
+# 第五次实践
+
+> `mean()` 样本均值
+
+> `var()` 样本方差
+
+> `integrate()` 积分
+
+> `Vectorize()` 向量化
+
+### 第一题
+
+```{r}
+x <- rbinom(100, 20, 0.3)
+mean(x)
+var(x)
+```
+
+### 第二题
+
+```{r}
+x <- rpois(1000, 3)
+mean(x)
+var(x)
+```
+
+### 第三题
+
+```{r}
+f <- function(x) {
+    if (x > 0 & x < 1) {
+        y <- x
+    } else if (x >= 1 & x < 2) {
+        y <- 2 - x
+    } else {
+        y <- 0
+    }
+    return(y)
+}
+xf <- function(x) {
+    x * f(x)
+}
+x2f <- function(x) {
+    x^2 * f(x)
+}
+ex <- integrate(Vectorize(xf), -Inf, Inf)
+ex2 <- integrate(Vectorize(x2f), -Inf, Inf)
+ex$value
+dx <- ex2$value - ex$value^2
+dx
+```
+
+### 第四题
+
+```{r}
+sim <- 10000
+t <- numeric(sim)
+for (i in 1:sim) {
+    Y <- 1500
+    X <- rexp(1, rate = 1 / 10)
+    Y[1 < X & X <= 2] <- 2000
+    Y[2 < X & X <= 3] <- 2500
+    Y[3 < X] <- 3000
+    t[i] <- Y
+}
+mean(t)
+```
+
+### 盲盒问题
+
+```{r}
+buy <- function(n) { # n 表示娃娃种类数
+    # 长度为 n 的数组，bought[i] 表示第 i 种娃娃是否被购买过
+    # bought[i] = 1 表示已购买，bought[i] = 0 表示未购买
+    bought <- rep(0, n)
+    times <- 0 # 总购买次数
+    while (any(bought == 0)) { # 当存在某种娃娃未购买，继续购买
+        times <- times + 1
+        bought[sample(c(1:n), 1)] <- 1
+    }
+    return(times)
+}
+estimate <- function(n, try) {
+    x <- c()
+    for (i in 1:try) {
+        x <- c(x, buy(n))
+    }
+    cat("模拟", try, "次，娃娃种类数为", n, "时平均需要购买的次数为", mean(x), "\n")
+}
+estimate(n = 10, try = 1000)
+```
+
+## 作业
+
+### 第一题
+
+```{r}
+estimate <- function() {
+    x <- rbinom(1000, 100, 0.2)
+    ex <- mean(x)
+    dx <- var(x)
+    cat("E(X)=", ex, " D(X)=", dx, "\n")
+}
+for (i in 1:5) {
+    estimate()
+}
+```
+
+### 第二题
+
+```{r}
+estimate <- function() {
+    x <- rpois(1000, 3)
+    ex <- mean(x)
+    dx <- var(x)
+    cat("E(X)=", ex, " D(X)=", dx, "\n")
+}
+for (i in 1:5) {
+    estimate()
+}
+```
+
+### 第三题
+
+```{r}
+f <- function(x) {
+    if (x > 0 & x < 1) {
+        y <- x
+    } else if (x >= 1 & x < 2) {
+        y <- 2 - x
+    } else {
+        y <- 0
+    }
+    return(y)
+}
+xf <- function(x) {
+    x * f(x)
+}
+x2f <- function(x) {
+    x^2 * f(x)
+}
+estimate <- function() {
+    ex <- integrate(Vectorize(xf), -Inf, Inf)
+    ex2 <- integrate(Vectorize(x2f), -Inf, Inf)
+    cat("E(X)=", ex$value, " D(X)=", ex2$value - ex$value^2, "\n")
+}
+for (i in 1:5) {
+    estimate()
+}
+```
+
+### 第四题
+
+```{r}
+mu <- 0
+sigma1 <- 1
+sigma2 <- 2
+sigma3 <- 3
+x <- seq(-10, 10, 0.1)
+y1 <- dnorm(x, mu, sigma1)
+y2 <- dnorm(x, mu, sigma2)
+y3 <- dnorm(x, mu, sigma3)
+plot(
+    main = "Density of different Normal distribution",
+    x, y1, type = "l", lwd = 2, col = "black", ylab = "Prob"
+)
+lines(x, y2, type = "l", lwd = 2, col = "blue")
+lines(x, y3, type = "l", lwd = 2, col = "red")
+legend("topright",
+    pch = 15,
+    c("N(0,1)", "N(0,2)", "N(0,3)"), col = c("black", "blue", "red")
+)
+```
+
+### 第五题
+
+```{r}
+par(mfcol = c(2, 2))
+a <- 0
+x <- function(b) cos(b)
+y <- function(b) cos(a + b)
+n <- 1000
+r <- runif(n, 0, 2 * pi)
+a <- 0
+rho <- cos(a)
+plot(x(r), y(r), main = sprintf("ρ=%.2f", rho), xlab = "X", ylab = "Y")
+a <- pi / 3
+rho <- cos(a)
+plot(x(r), y(r), main = sprintf("ρ=%.2f", rho), xlab = "X", ylab = "Y")
+a <- pi / 2
+rho <- cos(a)
+plot(x(r), y(r), main = sprintf("ρ=%.2f", rho), xlab = "X", ylab = "Y")
+a <- pi
+rho <- cos(a)
+plot(x(r), y(r), main = sprintf("ρ=%.2f", rho), xlab = "X", ylab = "Y")
+```
+
+### 第六题
+
+```{r}
+estimate <- function() {
+    ball <- c(0, 0, 0, 1, 1, 1, 2, 2, 3, 3)
+    ballcnt <- rep(0, 4)
+    n <- 100
+    for (i in 1:n) {
+        getball <- sample(ball, 1)
+        ballcnt[getball + 1] <- ballcnt[getball + 1] + 1
+    }
+    ballcnt <- ballcnt / n
+    expect <- 0
+    for (i in 0:3) {
+        expect <- expect + i * ballcnt[i + 1]
+    }
+    return(expect)
+}
+data <- c()
+for (i in 1:5) {
+    data <- c(data, estimate())
+}
+cat("estimate of ball expection\n", data)
+```
+
+### 第七题
+
+```{r}
+estimate <- function(k) {
+    p <- 0.01
+    n <- 1000
+    group <- n %/% k
+    data <- rbinom(n, 1, p)
+    cnt <- 0
+    for (i in 0:group - 2) {
+        if (sum(data[(i * k + 1):((i + 1) * k)]) == 0) {
+            cnt <- cnt + 1
+        } else {
+            cnt <- cnt + k + 1
+        }
+    }
+    if (sum(data[((group - 1) * k + 1):n]) == 0) {
+        cnt <- cnt + 1
+    }
+    cnt <- cnt + k + 1
+    return(cnt)
+}
+k <- c(2, 3, 4, 5, 6)
+for (i in k) {
+    times <- 0
+    for (j in 1:5) {
+        times <- times + estimate(i)
+    }
+    cat("estimated average number of tests when k =", i, "is", mean(times), "\n")
+}
+```
