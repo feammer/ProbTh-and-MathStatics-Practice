@@ -165,24 +165,86 @@ mean(x)
 f <- function(x, y, z) {
     return(x * exp(-y^2 + z^2) + x * y * z)
 }
-# xrg=c(3,6)
-# yrg=c(2,4)
-# zrg=c(1,3)
 times <- 1000
 n <- 1000
-data = c()
-for(i in 1:times) data=c(data,mean(f(runif(n, 3, 6), runif(n, 2, 4), runif(n, 1, 3))))
-mean(data) * 12
+data <- c()
+for (i in 1:times) data <- c(data, mean(f(runif(n, 3, 6), runif(n, 2, 4), runif(n, 1, 3))))
+
+mean(data * 2 * 2 * 3)
 ```
 
 ### 第四题
 
 ```{r}
-# num <- c(2, 5, 30)
-# n <- 1000
-# expsum <- rep(0, n)
-# for (i in 1:num[3]) {
-#     expsum <- expsum + rexp(n, 1)
-# }
-# hist(expsum, freq = FALSE, breaks = 12)
+layout(matrix(c(1, 3, 2, 4), ncol = 2))
+times <- 1000
+
+# Exp distribution
+for (n in c(1, 2, 5, 30)) {
+    expsum <- c()
+    lambda <- 1 / 100
+    mu <- 1 / lambda
+    sigma <- 1 / (sqrt(n) * lambda)
+    xdata <- seq(mu - 3 * sigma, mu + 3 * sigma, 0.01)
+    estnorm <- dnorm(xdata, mu, sigma)
+    for (i in 1:times) {
+        expsum <- c(expsum, mean(rexp(n, lambda)))
+    }
+    hist(expsum, freq = FALSE, main = paste("Exponential Sample Density n=", n))
+    lines(xdata, estnorm, lty = 2, col = 2, lwd = 2)
+    box()
+}
+
+# Uniform distribution
+for (n in c(1, 2, 5, 30)) {
+    unifsum <- c()
+    a <- 0
+    b <- 1
+    mu <- (b - a) / 2
+    sigma <- (b - a) / sqrt(n * 12)
+    xdata <- seq(mu - 3 * sigma, mu + 3 * sigma, 0.01)
+    estnorm <- dnorm(xdata, mu, sigma)
+    for (i in 1:times) {
+        unifsum <- c(unifsum, mean(runif(n, a, b)))
+    }
+    hist(unifsum, freq = FALSE, main = paste("Uniform Sample Density n=", n))
+    lines(xdata, estnorm, lty = 2, col = 2, lwd = 3)
+    box()
+}
+
+# Chi-square distribution
+for (n in c(1, 2, 5, 30)) {
+    chisqsum <- c()
+    df <- 10
+    mu <- df
+    sigma <- sqrt(2 * df / n)
+    xdata <- seq(mu - 3 * sigma, mu + 3 * sigma, 0.01)
+    estnorm <- dnorm(xdata, mu, sigma)
+    for (i in 1:times) {
+        chisqsum <- c(chisqsum, mean(rchisq(n, df)))
+    }
+    hist(chisqsum, freq = FALSE, main = paste("Chi-square Sample Density n=", n))
+    lines(xdata, estnorm, lty = 2, col = 2, lwd = 3)
+    box()
+}
+
+# custom distribution
+# f(x)=e^x, X~U(0,1)
+fx <- function(n) {
+    return(exp(runif(n, 0, 1)))
+}
+
+for (n in c(1, 2, 5, 30)) {
+    cstmsum <- c()
+    mu <- exp(1) - 1
+    sigma <- mu / sqrt(12 * n)
+    xdata <- seq(mu - 3 * sigma, mu + 3 * sigma, 0.01)
+    estnorm <- dnorm(xdata, mu, sigma)
+    for (i in 1:times) {
+        cstmsum <- c(cstmsum, mean(fx(n)))
+    }
+    hist(cstmsum, freq = FALSE, main = paste("fx=e^x,X~U(0,1) Sample Density n=", n))
+    lines(xdata, estnorm, lty = 2, col = 2, lwd = 3)
+    box()
+}
 ```
