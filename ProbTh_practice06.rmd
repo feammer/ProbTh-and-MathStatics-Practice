@@ -1,0 +1,105 @@
+# 第六次实践
+
+## 第一题
+
+```{r}
+x <- rbinom(50, 1, 0.5)
+n <- sum(x)
+y <- (n / 50) - 0.5
+abs(y)
+```
+
+## 第二题
+
+```{r}
+n <- 0
+for (i in 1:1000) {
+    x <- rbinom(50, 1, 0.5)
+    y <- sum(x) / 50 - 0.5
+    if (abs(y) > 0.05) n <- n + 1
+}
+cat("次数=", n, "频率=", n / 100, "\n")
+n <- 0
+for (i in 1:1000) {
+    x <- rbinom(500, 1, 0.5)
+    y <- sum(x) / 50 - 0.5
+    if (abs(y) > 0.05) n <- n + 1
+}
+cat("次数=", n, "频率=", n / 100, "\n")
+```
+
+## 第三题
+
+```{r}
+for (i in 1:5) {
+    times <- 1000
+    x <- runif(times)
+    y <- x^2
+    i <- mean(y)
+    cat("Monte Carlo integration i=", i, "\n")
+}
+fx <- function(x) {
+    return(x^2)
+}
+print("use internal function of R")
+integrate(fx, 0, 1)
+```
+
+## 第四题
+
+```{r}
+data <- matrix(sample(c(0, 1, 2), 40000, c(0.05, 0.8, 0.15), replace = T), 400, 1000)
+s1 <- apply(data, 2, sum)
+length(which(s1 > 450))
+p1 <- length(which(s1 > 450)) / 1000
+cat("参加家长会的家长人数超过450的概率 =", p1)
+s2 <- 0
+for (i in 1:1000) {
+    s2[i] <- length(which(data[, i] == 1))
+}
+p2 <- length(which(s2 <= 340)) / 1000
+cat("参加家长会的家长人数不多于340的概率 =", p2)
+```
+
+## 第五题
+
+```{r}
+n <- 1000
+cnt <- 0
+for (i in 1:n) {
+    x <- rbinom(10000, 1, 0.017)
+    if (sum(x) > 200) cnt <- cnt + 1
+}
+cat("保险公司在一年内的这项保险中亏本的概率 =", cnt / n)
+```
+
+## 第六题
+
+```{r}
+sim <- 10000
+t <- rep(0, sim)
+for (i in 1:sim) {
+    t[i] <- sum(rexp(16, rate = 1 / 100)) > 1920
+}
+cat("寿命总和大于1920小时的概率 =", mean(t))
+```
+
+## 思考题
+
+```{r}
+layout(matrix(c(1, 3, 2, 4), ncol = 2))
+r <- 1000
+lambda <- 1 / 100
+for (n in c(1, 5, 10, 30)) {
+    mu <- 1 / lambda
+    xbar <- numeric(r)
+    sxbar <- 1 / (sqrt(n) * lambda)
+    for (i in 1:r) {
+        xbar[i] <- mean(rexp(n, rate = lambda))
+    }
+    hist(xbar, prob = T, main = paste("n=", n))
+    npdf <- dnorm(seq(mu - 3 * sxbar, mu + 3 * sxbar, 0.01), mu, sxbar)
+    lines(seq(mu - 3 * sxbar, mu + 3 * sxbar, 0.01), npdf, lty = 2, col = 2, lwd = 2)
+    box()
+}
+```
