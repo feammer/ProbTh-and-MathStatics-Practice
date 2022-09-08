@@ -1,0 +1,86 @@
+## 1 `sample()` 函数使用
+
+```{r}
+a <- rbinom(1000, 1, 0.5)
+b <- sample(a, 20, replace = TRUE)
+b
+```
+
+## 2 经验分布函数
+
+```{r}
+plot(ecdf(rnorm(10)), col = 2)
+plot(ecdf(rnorm(100)), col = 2)
+plot(ecdf(rnorm(1000)), col = 2)
+```
+
+## 3
+
+```{r}
+sim <- 10000
+t <- numeric(sim)
+s <- numeric(sim)
+for (i in 1:sim) {
+    t[i] <- min(rnorm(3, 2, 3)) < 0
+    s[i] <- max(rnorm(3, 2, 3)) < 0
+}
+print(mean(t))
+print(mean(s))
+
+mean(replicate(10000, min(rnorm(3, 2, 3)) < 0))
+```
+
+## 4 正态分布
+
+```{r}
+x <- seq(-4, 4, 0.01)
+nrg <- c(10, 20, 30, 50)
+color <- 1
+plot(x, dnorm(x, sd = sqrt(10 / 100)),
+    type = "l", col = color, main = "N(0, sqrt(10/n))"
+)
+for (n in nrg) {
+    color <- color + 1
+    lines(x, dnorm(x, sd = sqrt(10 / n)), col = color)
+}
+legend("topright", lty = 1, lwd = 3,
+        legend = nrg, col = seq(1, 5, 1)
+)
+```
+
+## 5 卡方分布
+
+```{r}
+x <- seq(0, 60, 0.1)
+nrg <- c(20, 30, 40)
+color <- 2
+plot(x, dchisq(x, df = 10 - 1),
+    ylim = c(0, 0.15), type = "l", col = color, main = "chisq( df )"
+)
+for (n in nrg) {
+    color <- color + 1
+    lines(x, dchisq(x, df = n - 1), col = color)
+}
+legend("topright", title = "df value", lty = 1, lwd = 3,
+        legend = c(10, nrg) - 1, col = seq(2, 5, 1)
+)
+```
+
+## 6 F分布
+
+```{r}
+x <- seq(0, 2, 0.01)
+n1rg <- c(4, 10, 20, 100)
+n2 <- 5
+color <- 2
+plot(x, df(x, 2, n2),
+    ylim = c(0, 1), type = "l", col = color, main = "F( df1 , 5 )"
+)
+for (n1 in n1rg) {
+    color <- color + 1
+    lines(x, df(x, n1, n2), col = color)
+}
+legend("topright", title = "df2 value", lty = 1, lwd = 3,
+        legend = c(2, n1rg), col = seq(2, 6, 1)
+)
+```
