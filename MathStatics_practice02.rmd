@@ -1,0 +1,249 @@
+---
+title: "第2次实践 参数估计"
+---
+
+### 实验一
+
+设 $X_1,X_2,\ldots X_n$ 为来自均匀分布总体 $X\sim U(a,b)$ 的样本，求未知参数 $a,b$ 的点估计.
+
+```{r}
+# 样本方差
+sample_deviation <- function(sample_set) {
+    s <- 0
+    ave <- mean(sample_set)
+    n <- length(sample_set)
+    for (i in sample_set) {
+        s <- s + (i - ave)^2
+    }
+    return(s / (n - 1))
+}
+# 矩估计
+moment_estimate <- function(a, b, n, v) {
+    sample_set <- runif(n, a, b)
+    ave <- mean(sample_set)
+    if (v == "a") {
+        return(ave - sqrt(3 * sample_deviation(sample_set)))
+    }
+    if (v == "b") {
+        return(ave + sqrt(3 * sample_deviation(sample_set)))
+    }
+}
+a <- 0
+b <- 1
+n <- 500
+```
+
+(1). 取 $a=0,b=1,N=50$ ,产生 $N$ 个服从 $U(a,b)$ 分布的随机数当作样本,分别代入式中计算 $a,b$ 的估计值,并与理论值 $0,1$ 比较;
+
+```{r}
+cat("a 的矩估计", moment_estimate(a, b, n, "a"))
+cat("b 的矩估计", moment_estimate(a, b, n, "b"))
+```
+
+(2). 将(1)重复10次,用10次估计值的平均值作为 $a,b$ 的估计,并与(1)的结果比较,体会其中包含的概率思想.
+
+```{r}
+ave_a <- c()
+ave_b <- c()
+for (i in 1:10) {
+    ave_a <- c(ave_a, moment_estimate(a, b, n, "a"))
+    ave_b <- c(ave_b, moment_estimate(a, b, n, "b"))
+}
+cat("a 的均值", mean(ave_a))
+cat("b 的均值", mean(ave_b))
+```
+
+### 实验二
+
+设总体 $X\sim P(\lambda)(\lambda>0)$ , $X_1,X_2,\ldots X_n$ 是来自总体X的一组样本，求参数 $\lambda$ 的极大似然估计量
+
+$$
+P(X=k)=\frac{\lambda^k}{k!}e^{-\lambda},k=0,1,\cdots
+$$
+
+$$
+\left\{\begin{aligned}
+& L(\lambda)=e^{-n\lambda}\prod^n_{i=1}\frac{\lambda^{x_i}}{x_i!} \\
+& \frac{\text{d}lnL(\lambda)}{\text{d}\lambda}=0
+\end{aligned}\right.
+\quad\Rightarrow\quad
+\hat{\lambda}=\overline{x}
+$$
+
+```{r}
+maximum_likelihood_estimate <- function(lambda) {
+    sample_num <- 1000
+    sample_set <- rpois(sample_num, lambda)
+    return(mean(sample_set))
+}
+lambda <- 0.5
+cat("λ 取值", lambda)
+cat("λ 的极大似然估计", maximum_likelihood_estimate(lambda))
+```
+
+### 实验三
+
+设总体 $X$ 的密度函数为 $f(x)=\left\{\begin{array}{c}(\theta+1) x^{\theta}, 0<x<1 \\0, \text { 其他 }\end{array}, \theta>-1\right.$ 是未知参数， $X_1,X_2,\ldots X_n$ 是来自总体 $X$ 的一组样本，求 $\theta$ 的极大似然估计量
+
+$$
+F(x)=\int^{x}_{0}(\theta+1) x^{\theta}\text{d}x=x^{\theta+1} \quad\Rightarrow\quad x={F(x)}^{\frac{1}{\theta+1}}
+$$
+
+$$
+\left\{\begin{aligned}
+& L(\theta) = (\theta+1)^n (\prod^{n}_{i=1}x_i)^\theta \\
+& \frac{\text{d}lnL(\theta)}{\text{d}\theta}=0
+\end{aligned}\right.
+\quad \Rightarrow \quad
+\hat{\theta} = -\frac{n}{\sum^{n}_{i=1}lnx_i}-1
+$$
+
+```{r}
+maximum_likelihood_estimate <- function(theta) {
+    sample_num <- 1000
+    sample_set <- log(runif(sample_num, 0, 1)^(1 / (theta + 1)))
+    return(-sample_num / sum(sample_set) - 1)
+}
+theta <- 0.5
+cat("θ 取值", theta)
+cat("θ 的极大似然估计", maximum_likelihood_estimate(theta))
+```
+
+### 实验四
+
+随机产生随机数 $X\sim N(8,1)$ ,样本容量为9，这样的样本共100份，试求出100份样本中均值 $\mu$ 的置信水平为0.95的置信区间，并统计100个置信区间中大概有多少个区间包含真正均值 $\mu$ ，即大概有多少个区间包含总体均值8。
+
+```{r fig.show="hold"}
+m <- matrix(rnorm(900, 8, 1), 100, 9)
+Mean <- apply(m, 1, mean)
+low <- Mean - (1 / sqrt(9)) * qnorm(0.975)
+up <- Mean + (1 / sqrt(9)) * qnorm(0.975)
+CIs <- cbind(low, up)
+CIlow <- apply(CIs, 1, min)
+CIup <- apply(CIs, 1, max)
+CIs <- data.frame(low = CIlow, up = CIup)
+plot(0,
+    xlim = c(0, 100), ylim = c(min(CIs) - 0.2, max(CIs) + 0.2),
+    type = "n", xlab = "", ylab = ""
+)
+cnt <- 0
+for (i in seq_len(nrow(CIs))) {
+    lines(rep(i, 2), c(CIs[i, 1], CIs[i, 2]))
+    points(i, Mean[i], col = "green", cex = 0.5)
+    if (CIs[i, 1] <= 8 && 8 <= CIs[i, 2]) {
+        cnt <- cnt + 1
+    }
+}
+abline(h = 8)
+cat("包含总体均值8的区间个数=", cnt)
+```
+
+### 实验五
+
+已知幼儿身高服从正态分布，现从5~6岁的幼儿中随机地抽查了9人，其高度(单位：cm)分别为：115，120，131，115， 109，115，115，105，110；假设标准差 $\sigma_0=7$ ，置信度为95%，试求总体均值 $\mu$ 的置信区间.
+
+置信区间 $[\overline{X}-\frac{\sigma}{\sqrt{n}}u_{1-\frac{\alpha}{2}},\overline{X}+\frac{\sigma}{\sqrt{n}}u_{1-\frac{\alpha}{2}}],\alpha = 0.05$
+
+```{r}
+n <- 9
+height_set <- c(115, 120, 131, 115, 109, 115, 115, 105, 110)
+sigma0 <- 7
+alpha <- 0.05
+ave <- mean(height_set)
+u <- qnorm(1 - alpha / 2)
+cat("置信区间 [", ave - u * sigma0 / sqrt(n), ",", ave + u * sigma0 / sqrt(n), "]")
+```
+
+### 实验六
+
+试利用R软件说明以下问题：显然对于 $N(0,1)$ 这种对称的密度函数，选取左、右两尾的面积（概率）相等对应的分位点，得到的置信区间长度最短，即估计的精度最高．但对于非对称的密度函数，选取左、右两尾的面积相等对应的分位点，得到的区间长度并非最短，但也与最小长度相差不是很大.
+
+使用 $\chi^2$ 分布验证
+
+```{r}
+# 卡方分布的误差分析
+error_chisq <- function(alpha, df) {
+    # 取值细度
+    fineness <- 100
+    # 左侧面积取值
+    ls <- seq(0, alpha * (fineness - 1) / fineness, alpha / fineness)
+    # 对应置信区间长度
+    len <- c()
+    for (i in ls) {
+        left <- qchisq(i, df)
+        right <- qchisq(1 - (alpha - i), df)
+        len <- c(len, right - left)
+    }
+    cat(
+        "α=", alpha, "自由度=", df,
+        "最小区间长=", min(len), "等尾原则区间长=", len[fineness / 2], "\n"
+    )
+    # 使用等尾原则时区间长度相对最小区间长度的误差
+    return(abs(len[fineness / 2] - min(len)) / (min(len)))
+}
+draw_chisq <- function(df) {
+    alpha <- c(0.005, 0.01, 0.025, 0.05)
+    e <- c()
+    for (a in alpha) {
+        e <- c(e, error_chisq(a, df))
+    }
+    e <- round(e, 6)
+    error_plot <- barplot(e * 100,
+        names.arg = alpha,
+        ylim = c(0, ceiling(max(e * 100) + 5)),
+        main = paste("卡方分布的误差分析  自由度为", df),
+        xlab = "α取值", ylab = "区间长度误差 (%)"
+    )
+    text(error_plot, e * 100 + 2, paste(round(e * 100, 2), "%"))
+}
+par(mfrow = c(2, 2))
+df_set <- c(2, 5, 10, 15)
+for (df in df_set) {
+    draw_chisq(df)
+}
+```
+
+从上面几组实验数据中能够发现，在卡方分布中使用等尾原则的误差大小同 $\alpha$ 的取值和自由度 $n$ 的取值呈正相关的关系，在自由度 $n \le 5$ 时使用等尾原则造成的误差较大
+
+### 实验七
+
+试利用R软件说明以下问题：当置信水平 $1-\alpha$ 固定，样本容量 $n$ 与区间精度的关系
+
+使用单一正态总体均值的区间估计为例进行说明
+
+$$
+X\sim N(0,1)
+$$
+
+取置信水平 $1-\alpha = 0.95$
+
+```{r}
+confidence_interval <- function(n) {
+    alpha <- 0.05
+    # 样本容量为 n 的 k 组样本
+    k <- 25
+    sample_set <- matrix(rnorm(n * k, 0, 1), nrow = k, ncol = n)
+    # 按行求均值
+    sample_mean <- apply(sample_set, 1, mean)
+    # 区间范围
+    low <- sample_mean - (1 / sqrt(n)) * qnorm(1 - alpha / 2)
+    up <- sample_mean + (1 / sqrt(n)) * qnorm(1 - alpha / 2)
+    sample_confidence_interval <- cbind(low, up)
+    plot(c(),
+        main = paste("样本容量为", n), xlab = "样本组别", ylab = "区间估计",
+        xlim = c(0, k), ylim = c(-3, 3)
+    )
+    for (i in 1:k) {
+        lines(rep(i, 2), c(low[i], up[i]))
+        points(i, sample_mean[i], col = "red", cex = 0.5)
+    }
+    abline(h = 0)
+}
+par(mfrow = c(2, 3))
+n <- c(4, 8, 10, 20, 25, 50)
+for (n in n) {
+    confidence_interval(n)
+}
+```
+
+随样本容量的增加，区间估计的范围减小，样本均值靠近总体均值，区间精度提高
