@@ -1,0 +1,185 @@
+---
+title: "第3次实践 假设检验"
+---
+
+## 实验目的
+
+1. 加深对假设检验的基本思想和方法的理解。
+
+2. 加深理解参数的假设检验。
+
+3. 加深理解非参数的假设检验。
+
+4. 学会针对实际问题提出原假设和备择假设，并根据检验结果作出判断。
+
+## 实验要求
+
+1. 熟练掌握R中假设检验的命令，例如t.test, z.test, var.test。
+
+2. 熟悉各命令中参数的设置；
+
+3. 结合具体问题，调用或编写相应检验程序，并对检验结果进行解读。
+
+## 实验内容
+
+> BSDA::z.test		Z-test
+
+> stats::t.test		Student's t-Test
+
+> stats::var.test		F Test to Compare Two Variances
+
+> stats::chisq.test		Pearson's Chi-squared Test for Count Data
+
+> stats::ks.test		Kolmogorov-Smirnov Tests
+
+> stats::binom.test		Exact Binomial Test
+
+```{r}
+library(BSDA)
+```
+
+### 实验一
+
+国家规定某种药品的杂质含量不得超过0.1(mg/g)，药检局对某药厂送检的该种药品进行了10次检测，测得10个数据如下：
+
+```{r}
+d <- c(0.07, 0.11, 0.13, 0.10, 0.09, 0.12, 0.05, 0.07, 0.08, 0.15)
+```
+
+设检测值 $X\sim N(\mu,\sigma^2)$ 。试问在显著性水平α=0.05下，该药品杂质含量是否超过国家规定的标准？
+
+```{r}
+t.test(d, alternative = "greater", mu = 0.1, conf.level = 0.95)
+```
+
+检验结果为 $p=0.617>0.05=\alpha$，药品杂质含量超过国家规定的标准
+
+### 实验二
+
+用包装机包装洗衣粉，在正常的情况下，每袋标准重量为1000g,标准差不能超过15g。假设洗衣粉袋重服从正态分布。某天检验包装机工作情况，从已装好的袋中随机抽取10袋，测得其重（单位：g）为
+
+1020，1030，968，994，1014，998，976，982，950，1048
+
+问按标准差来衡量，这天机器工作是否正常。（α=0.05）
+
+```{r}
+vartest <- function(x, sigma0, alternative = "twoside", alpha = 0.05) {
+    n <- length(x)
+    s <- sd(x)
+    ch <- (n - 1) * s^2 / sigma0^2
+    if (alternative == "twoside") {
+        c1 <- qchisq(alpha / 2, n - 1)
+        c2 <- qchisq(1 - alpha / 2, n - 1)
+        p <- 2 * min(pchisq(ch, n - 1), 1 - pchisq(ch, n - 1))
+        data.frame(
+            var = var(x), chisq_value = ch,
+            chisq_crit1 = c1, chisq_crit2 = c2, p_value = p
+        )
+    } else if (alternative == "less") {
+        c <- qchisq(alpha, n - 1)
+        p <- pchisq(ch, n - 1)
+        data.frame(var = var(x), chisq_value = ch, chisq_crit = c, p_value = p)
+    } else if (alternative == "greater") {
+        c <- qchisq(1 - alpha, n - 1)
+        p <- 1 - pchisq(ch, n - 1)
+        data.frame(var = var(x), chisq_value = ch, chisq_crit = c, p_value = p)
+    }
+}
+d <- c(1020, 1030, 968, 994, 1014, 998, 976, 982, 950, 1048)
+vartest(d, 15)
+qchisq(0.95, 14)
+```
+
+因为 $\frac{(n-1)S^2}{\sigma_0^2}=36.55111>23.68479=\chi^2_{0.95}(14)$ ，或者根据 $p=6.328351e-05 \le 0.05=\alpha$ ，所以按标准差来衡量，这天机器工作不正常
+
+### 实验三
+
+假定某班60个男生身高（单位:cm）,数据如下：
+
+166,169,181,173,165,169,170,163,175,164,171,162,156,159,173,
+168,167,165,172,170,180,177,161,170,164,163,172,167,157,165,
+168,174,165,168,162,163,159,163,167,173,161,160,165,160,173,
+164,166,152,163,164,176,160,164,167,158,172,167,168,167,170
+
+现在希望通过这些数据来确定该班身高的分布。
+
+```{r warning=FALSE}
+d <- c(
+    166, 169, 181, 173, 165, 169, 170, 163, 175, 164, 171, 162, 156, 159, 173, 168, 167, 165, 172, 170, 180, 177, 161, 170, 164, 163, 172, 167, 157, 165, 168, 174, 165, 168, 162, 163, 159, 163, 167, 173, 161, 160, 165, 160, 173, 164, 166, 152, 163, 164, 176, 160, 164, 167, 158, 172, 167, 168, 167, 170
+)
+t <- table(cut(d, br = c(150, 159, 169, 179, 185)))
+p <- pnorm(c(160, 170, 180, 185), mean(d), sd(d))
+p <- c(p[1], p[2] - p[1], p[3] - p[2], 1 - p[3])
+chisq.test(t, p = p)
+```
+
+### 实验四
+
+试利用R软件编写单个正态总体对方差的假设检验问题。并用任一教材上的例题进行程序验证。
+
+```{r}
+vartest <- function(s, sigma0, n, mu = NA, alternative = "twoside", alpha = 0.05) {
+    if (is.na(mu)) {
+        ch <- (n - 1) * s^2 / sigma0^2
+        n <- n - 1
+    } else {
+        ch <- n * s^2 / sigma0^2
+    }
+    if (alternative == "twoside") {
+        c1 <- qchisq(alpha / 2, n)
+        c2 <- qchisq(1 - alpha / 2, n)
+        p <- 2 * min(pchisq(ch, n), 1 - pchisq(ch, n))
+        data.frame(
+            chisq_value = ch,
+            chisq_crit1 = c1, chisq_crit2 = c2,
+            p_value = p
+        )
+    } else if (alternative == "less") {
+        c <- qchisq(alpha, n)
+        p <- pchisq(ch, n)
+        data.frame(chisq_value = ch, chisq_crit = c, p_value = p)
+    } else if (alternative == "greater") {
+        c <- qchisq(1 - alpha, n)
+        p <- 1 - pchisq(ch, n)
+        data.frame(chisq_value = ch, chisq_crit = c, p_value = p)
+    }
+}
+```
+
+课本P224 例8 某种导线要求其电阻的标准差不得超过 $\sigma_0=0.005(\Omega)$ ，今在生产的一批导线中取样品15根，测得其样本方差值 $s^2=0.0067^2$ 。设导线电阻服从正态分布，问在显著性水平 $\alpha=0.05$ 下，能否认为这批导线的标准差显著偏大？
+
+$$
+H_0:\sigma^2\le\sigma_0^2=0.005^2,\quad H_1:\sigma^2>\sigma_0^2
+$$
+
+```{r}
+vartest(0.0067, 0.005, 15)
+qchisq(0.95, 14)
+```
+
+因为 $\frac{(n-1)S^2}{\sigma_0^2}=25.1384>23.68479=\chi^2_{0.95}(14)$ ，所以拒绝 $H_0$ 。
+
+### 实验五
+
+利用R软件生成服从标准正态分布的随机数，利用这些随机数考察 $\left(n-1\right)S^2$ 的分布及特征。
+
+```{r}
+n <- 10
+d <- c()
+for (i in 1:1000) {
+    sample_set <- rnorm(n)
+    d <- c(d, (n - 1) * var(sample_set))
+}
+plot(ecdf(d), col = "red")
+lines(ecdf(rchisq(1000, n - 1)), col = "blue")
+legend("bottomright",
+    col = c("red", "blue"), lty = c(1, 1),
+    legend = c(expression("(n-1)" ~ S^2), expression(chi^2 ~ "(n-1)"))
+)
+```
+
+从上图可以发现， $(n-1)S^2$ 和 $\chi^2(n-1)$ 的分布基本吻合
+
+## 实验小结
+
+通过本次实验，对假设检验有了更深的理解，同时学习了R语言中对假设检验的各种函数，体会到其便捷性
